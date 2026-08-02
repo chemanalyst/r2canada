@@ -32,15 +32,14 @@ jobs:
       - name: Open a pull request if anything changed
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: 'Sync new reservation tracker entries'
-          title: 'New reservation tracker entries to review'
+          commit-message: 'Rebuild reservation tracker data from Google Sheet'
+          title: 'Reservation tracker data updated'
           body: |
-            Automated sync found new Google Form responses since the last run.
+            Automated sync rebuilt `js/tracker-data.js` from the current
+            contents of the Google Form response Sheet — this reflects any
+            rows added, edited, or removed there since the last sync.
 
-            Review the entries added to `js/tracker-data.js` below, edit anything
-            that looks off (e.g. inconsistent order-status wording), then merge
-            to publish them on the live site.
+            Review the diff below, then merge to publish it on the live site.
           branch: sync/tracker-data
           add-paths: |
             js/tracker-data.js
-            js/tracker-sync-state.json
