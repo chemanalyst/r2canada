@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * Reads new rows from the Google Sheet linked to your Reservation Tracker
- * Google Form, formats them, and appends them to js/tracker-data.js.
+ * Rebuilds js/tracker-data.js from the Google Sheet linked to your
+ * Reservation Tracker Google Form. Each run replaces the entire entries
+ * list with whatever is currently in the Sheet — so both new rows and
+ * deleted rows are reflected. Nothing is added to tracker-data.js by hand
+ * outside of this script; the Sheet is the single source of truth.
  *
  * Read-only: uses a Google Sheets API key, which can only fetch data, never
  * write back to the Sheet or anything else in your Google account.
@@ -23,7 +26,6 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.join(__dirname, 'tracker-data.js');
-const STATE_FILE = path.join(__dirname, 'tracker-sync-state.json');
 
 const COLUMNS = {
   timestamp: 0,
@@ -56,7 +58,7 @@ function normalizeDate(raw) {
     return d.toISOString().slice(0, 10);
   }
 
-  console.warn(`Could not parse date "${raw}" — leaving entry's date as null.`);
+  console.warn(`Could not parse date "${raw}" — skipping this row's date.`);
   return null;
 }
 
@@ -71,29 +73,15 @@ async function fetchRows() {
   return data.values || [];
 }
 
-function loadState() {
-  try {
-    return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-  } catch {
-    return { syncedTimestamps: [] };
-  }
-}
-
-function saveState(state) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + '\n');
-}
-
-function loadEntries() {
+function loadFileTemplate() {
   const content = fs.readFileSync(DATA_FILE, 'utf8');
-  const match = content.match(/window\.TRACKER_ENTRIES\s*=\s*(\[[\s\S]*?\]);/);
+  const match = content.match(/window\.TRACKER_ENTRIES\s*=\s*\[[\s\S]*?\];/);
   if (!match) throw new Error('Could not find window.TRACKER_ENTRIES array in tracker-data.js');
-  // Safe-ish eval of a JSON-like JS array literal
-  // eslint-disable-next-line no-new-func
-  const entries = Function(`"use strict"; return (${match[1]});`)();
-  return { content, entries, arrayText: match[1] };
+  return { content, oldBlock: match[0] };
 }
 
 function serializeEntries(entries) {
+  if (entries.length === 0) return 'window.TRACKER_ENTRIES = [];';
   const lines = entries.map(e => {
     const parts = [
       `region: ${JSON.stringify(e.region || '')}`,
@@ -104,27 +92,16 @@ function serializeEntries(entries) {
     ];
     return `  { ${parts.join(', ')} }`;
   });
-  return `[\n${lines.join(',\n')}\n]`;
+  return `window.TRACKER_ENTRIES = [\n${lines.join(',\n')}\n];`;
 }
 
 async function main() {
   const rows = await fetchRows();
-  const state = loadState();
-  const synced = new Set(state.syncedTimestamps);
 
-  const { content, entries, arrayText } = loadEntries();
-
-  let added = 0;
+  const entries = [];
   for (const row of rows) {
-    const timestamp = row[COLUMNS.timestamp];
-    if (!timestamp || synced.has(timestamp)) continue;
-
     const reservedDate = normalizeDate(row[COLUMNS.reserved_date]);
-    if (!reservedDate) {
-      console.warn(`Skipping row with timestamp ${timestamp}: no valid reservation date.`);
-      synced.add(timestamp);
-      continue;
-    }
+    if (!reservedDate) continue; // skip blank/unparseable rows entirely
 
     entries.push({
       region: (row[COLUMNS.region] || '').trim(),
@@ -133,26 +110,24 @@ async function main() {
       order_status: (row[COLUMNS.order_status] || '').trim(),
       delivered_date: normalizeDate(row[COLUMNS.delivered_date])
     });
-
-    synced.add(timestamp);
-    added++;
   }
 
-  if (added === 0) {
-    console.log('No new entries to sync.');
+  const { content, oldBlock } = loadFileTemplate();
+  const newBlock = serializeEntries(entries);
+
+  if (oldBlock === newBlock) {
+    console.log('No changes — tracker-data.js already matches the Sheet.');
     return;
   }
 
-  const newArrayText = serializeEntries(entries);
-  const newContent = content.replace(arrayText, newArrayText);
+  const newContent = content.replace(oldBlock, newBlock);
   fs.writeFileSync(DATA_FILE, newContent);
 
-  saveState({ syncedTimestamps: Array.from(synced) });
-
-  console.log(`Synced ${added} new entr${added === 1 ? 'y' : 'ies'}.`);
+  console.log(`Rebuilt tracker-data.js with ${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} from the Sheet.`);
 }
 
 main().catch(err => {
   console.error(err);
   process.exit(1);
 });
+
