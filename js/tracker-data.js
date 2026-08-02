@@ -32,10 +32,4 @@
  *                     yet available
  */
 
-window.TRACKER_ENTRIES = [
-  { region: "British Columbia", trim: "Performance", reserved_date: "2024-08-14", order_status: "In production", delivered_date: null },
-  { region: "Ontario", trim: "Premium", reserved_date: "2024-09-02", order_status: "Configured", delivered_date: null },
-  { region: "Quebec", trim: "", reserved_date: "2025-01-20", order_status: "Reserved", delivered_date: null },
-  { region: "Quebec", trim: "Standard", reserved_date: "2026-06-09", order_status: "Reservation Only (No Configuration Yet)", delivered_date: "2027-03-19" },
-  { region: "Ontario", trim: "Premium", reserved_date: "2026-03-01", order_status: "Reservation Only (No Configuration Yet)", delivered_date: "2027-07-15" }
-];
+window.TRACKER_ENTRIES = [];
