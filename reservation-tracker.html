@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservation Tracker — R2 Canada Tracker</title>
+<meta name="description" content="Log your Rivian R2 Canada reservation and delivery dates anonymously, no account needed, and see crowdsourced wait-time stats from other reservation holders.">
+<link rel="canonical" href="https://r2canadatracker.ca/reservation-tracker.html">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="R2 Canada Tracker">
+<meta property="og:title" content="Reservation Tracker — R2 Canada Tracker">
+<meta property="og:description" content="Log your Rivian R2 Canada reservation and delivery dates anonymously, no account needed, and see crowdsourced wait-time stats from other reservation holders.">
+<meta property="og:url" content="https://r2canadatracker.ca/reservation-tracker.html">
+<meta property="og:image" content="https://r2canadatracker.ca/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Reservation Tracker — R2 Canada Tracker">
+<meta name="twitter:description" content="Log your Rivian R2 Canada reservation and delivery dates anonymously, no account needed, and see crowdsourced wait-time stats from other reservation holders.">
+<meta name="twitter:image" content="https://r2canadatracker.ca/og-image.png">
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Rivian R2 Canada Reservation Tracker",
+    "url": "https://r2canadatracker.ca/reservation-tracker.html",
+    "description": "A crowdsourced, anonymous tracker for Rivian R2 reservation and delivery dates in Canada.",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "R2 Canada Tracker",
+      "url": "https://r2canadatracker.ca/index.html"
+    }
+  }
+</script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a href="index.html" class="brand">R2 Canada Tracker <span class="tag">CA</span></a>
+    <nav class="main">
+<a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="r2-canada.html">R2 in Canada</a>
+      <a href="reservation-tracker.html" class="active">Reservation Tracker</a>
+      <a href="about.html">About</a>
+    </nav>
+    <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span class="bars"><span></span><span></span><span></span></span>
+    </button>
+  </div>
+  <nav class="mobile-menu">
+<a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="r2-canada.html">R2 in Canada</a>
+      <a href="reservation-tracker.html" class="active">Reservation Tracker</a>
+      <a href="about.html">About</a>
+  </nav>
+</header>
+
+<div class="contours">
+  <div class="page-hero" style="color:var(--cream-text)">
+    <div class="wrap">
+      <span class="kicker" style="color:var(--yellow)">Crowdsourced · Anonymous</span>
+      <h1>When did your R2 get reserved — and when did it show up?</h1>
+      <p style="color:rgba(243,241,231,0.75)">No login needed. Add your reservation and delivery dates and see how wait times are actually shaking out for Canadian orders.</p>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+
+    <div class="callout" style="margin-top:0;">
+      <strong>How this works:</strong> submissions go through a short Google Form, not directly onto this page — that keeps the site fully static with no public write access for anyone to spam or tamper with. Approved entries are added to this log by the site owner, so there may be a short delay before a new submission shows up.
+    </div>
+
+    <div class="stat-strip" id="stat-strip" style="margin-bottom:44px; border:1px solid rgba(22,36,29,0.1);">
+      <div class="stat" style="background:var(--ink);"><span class="num" id="stat-count">—</span><span class="label">Entries logged</span></div>
+      <div class="stat" style="background:var(--ink);"><span class="num" id="stat-avg">—</span><span class="label">Avg. wait (reserved → delivered)</span></div>
+      <div class="stat" style="background:var(--ink);"><span class="num" id="stat-delivered">—</span><span class="label">Delivered so far</span></div>
+      <div class="stat" style="background:var(--ink);"><span class="num" id="stat-waiting">—</span><span class="label">Still waiting</span></div>
+    </div>
+
+    <div class="board-form" style="text-align:center;">
+      <p style="margin:0 0 16px; color:var(--muted);">Reserved an R2, or already got yours delivered? Share your dates — takes under a minute, no account needed.</p>
+      <a href="https://forms.gle/vLKFKYNGXso6nPJs8" target="_blank" rel="noopener" class="btn btn-rust">Submit your timeline →</a>
+    </div>
+
+    <div class="section-head">
+      <div>
+        <span class="kicker">Reported timelines</span>
+        <h2>Reservation → delivery log</h2>
+      </div>
+    </div>
+
+    <div class="table-scroll">
+      <table class="spec-table" id="entry-table">
+        <thead>
+          <tr>
+            <th>Region</th>
+            <th>Trim</th>
+            <th>Reserved</th>
+            <th>Order status</th>
+            <th>Delivered</th>
+            <th>Wait time</th>
+          </tr>
+        </thead>
+        <tbody id="entry-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="empty-state" style="display:none;">No entries yet on this device — be the first to log a timeline above.</div>
+
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <h5>R2 Canada Tracker</h5>
+        <p class="disclaimer">An independent, owner-run resource for Rivian owners and reservation holders in Canada. Not affiliated with Rivian Automotive, Inc.</p>
+      </div>
+      <div>
+        <h5>Site</h5>
+        <ul>
+          <li><a href="news.html">News</a></li>
+          <li><a href="r2-canada.html">R2 in Canada</a></li>
+          <li><a href="reservation-tracker.html">Reservation Tracker</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Resources</h5>
+        <ul>
+          <li><a href="about.html">About this site</a></li>
+          <li><a href="r2-canada.html#specs">R2 specs</a></li>
+          <li><a href="r2-canada.html#service">Service centres</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Elsewhere</h5>
+        <ul>
+          <li><a href="#">Reddit — r/Rivian</a></li>
+          <li><a href="#">Discord</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 R2 Canada Tracker. Unofficial fan resource.</span>
+      <span>Not affiliated with Rivian Automotive, Inc.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/tracker-data.js"></script>
+<script src="js/tracker-render.js"></script>
+<script src="js/nav.js"></script>
+</body>
+</html>
