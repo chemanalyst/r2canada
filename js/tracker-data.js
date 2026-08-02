@@ -32,4 +32,6 @@
  *                     yet available
  */
 
-window.TRACKER_ENTRIES = [];
+window.TRACKER_ENTRIES = [
+  { region: "Quebec", trim: "Standard", reserved_date: "2026-06-09", order_status: "Reservation Only (No Configuration Yet)", delivered_date: "2027-03-19" }
+];
