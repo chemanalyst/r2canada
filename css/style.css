@@ -461,6 +461,19 @@ footer.site h5 {
 footer.site ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 9px; }
 footer.site a { text-decoration: none; color: rgba(243,241,231,0.65); font-size: 0.88rem; }
 footer.site a:hover { color: var(--cream-text); }
+footer.site .coming-soon {
+  color: rgba(243,241,231,0.35);
+  font-size: 0.88rem;
+  cursor: default;
+}
+footer.site .coming-soon .tag-soon {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(243,241,231,0.3);
+  margin-left: 6px;
+}
 footer.site .foot-bottom {
   border-top: 1px solid rgba(243,241,231,0.12);
   padding-top: 22px;
