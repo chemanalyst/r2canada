@@ -1,0 +1,45 @@
+name: Sync Reservation Tracker
+
+# Runs automatically once a day, and can also be triggered manually from
+# the Actions tab (Run workflow button) whenever you want to check sooner.
+on:
+  schedule:
+    - cron: '0 13 * * *'  # 13:00 UTC daily (~9am Eastern)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Sync new form responses
+        env:
+          GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+          GOOGLE_SHEETS_ID: ${{ secrets.GOOGLE_SHEETS_ID }}
+        run: node js/sync-tracker.mjs
+
+      - name: Open a pull request if anything changed
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'Rebuild reservation tracker data from Google Sheet'
+          title: 'Reservation tracker data updated'
+          body: |
+            Automated sync rebuilt `js/tracker-data.js` from the current
+            contents of the Google Form response Sheet — this reflects any
+            rows added, edited, or removed there since the last sync.
+
+            Review the diff below, then merge to publish it on the live site.
+          branch: sync/tracker-data
+          add-paths: |
+            js/tracker-data.js

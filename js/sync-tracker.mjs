@@ -3,15 +3,30 @@
  * Rebuilds js/tracker-data.js from the Google Sheet linked to your
  * Reservation Tracker Google Form. Each run replaces the entire entries
  * list with whatever is currently in the Sheet — so both new rows and
- * deleted rows are reflected. Nothing is added to tracker-data.js by hand
- * outside of this script; the Sheet is the single source of truth.
+ * deleted rows are reflected.
  *
- * Read-only: uses a Google Sheets API key, which can only fetch data, never
- * write back to the Sheet or anything else in your Google account.
+ * Auth: uses a Google service account (a JWT signed with its private key),
+ * NOT a public API key. This means the Sheet does not need to be shared
+ * with "Anyone with the link" — it can stay fully private, shared only
+ * with the service account's own email address, the same way you'd share
+ * it with a real collaborator. Nobody else can read it.
  *
- * Requires two GitHub Actions secrets/variables (see workflow file):
- *   GOOGLE_SHEETS_API_KEY   - an API key with the Sheets API enabled
- *   GOOGLE_SHEETS_ID        - the spreadsheet ID from its URL
+ * SETUP
+ * 1. In Google Cloud Console, go to IAM & Admin -> Service Accounts ->
+ *    Create Service Account. Any name is fine (e.g. "tracker-sync").
+ * 2. Open the new service account -> Keys tab -> Add Key -> Create new key
+ *    -> JSON. This downloads a .json file — treat it like a password.
+ * 3. Open your Google Sheet (the Form's response sheet) -> Share -> paste
+ *    in the service account's email (looks like
+ *    tracker-sync@your-project.iam.gserviceaccount.com, found inside the
+ *    downloaded JSON as "client_email") -> give it Viewer access.
+ *    You do NOT need to enable link sharing for anyone else.
+ * 4. In your GitHub repo: Settings -> Secrets and variables -> Actions ->
+ *    New repository secret. Name it GOOGLE_SERVICE_ACCOUNT_KEY and paste
+ *    the ENTIRE contents of the downloaded JSON file as the value.
+ * 5. Add (or keep) GOOGLE_SHEETS_ID as a secret with your spreadsheet ID.
+ * 6. You can delete the old GOOGLE_SHEETS_API_KEY secret and remove any
+ *    "Anyone with the link" sharing on the Sheet — neither is used anymore.
  *
  * Assumes the response Sheet's columns are, in order:
  *   A: Timestamp | B: Region | C: Trim | D: Reservation Date
@@ -22,6 +37,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -36,23 +52,77 @@ const COLUMNS = {
   delivered_date: 5
 };
 
-const API_KEY = process.env.GOOGLE_SHEETS_API_KEY;
 const SHEET_ID = process.env.GOOGLE_SHEETS_ID;
 const SHEET_RANGE = process.env.GOOGLE_SHEETS_RANGE || 'A2:F1000'; // skip header row
+const SERVICE_ACCOUNT_KEY_RAW = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
 
-if (!API_KEY || !SHEET_ID) {
-  console.error('Missing GOOGLE_SHEETS_API_KEY or GOOGLE_SHEETS_ID env vars.');
+if (!SHEET_ID || !SERVICE_ACCOUNT_KEY_RAW) {
+  console.error('Missing GOOGLE_SHEETS_ID or GOOGLE_SERVICE_ACCOUNT_KEY env vars.');
   process.exit(1);
+}
+
+function base64url(input) {
+  return Buffer.from(input)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+async function getAccessToken() {
+  let key;
+  try {
+    key = JSON.parse(SERVICE_ACCOUNT_KEY_RAW);
+  } catch {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY is not valid JSON — make sure the whole downloaded file was pasted in as the secret value.');
+  }
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claims = {
+    iss: key.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: nowSec,
+    exp: nowSec + 3600
+  };
+
+  const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claims))}`;
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(unsigned);
+  signer.end();
+  const signature = signer.sign(key.private_key)
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+  const jwt = `${unsigned}.${signature}`;
+
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt
+    })
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Token request failed ${res.status}: ${body}`);
+  }
+
+  const data = await res.json();
+  return data.access_token;
 }
 
 function normalizeDate(raw) {
   if (!raw || !raw.trim()) return null;
   const s = raw.trim();
 
-  // Already ISO format
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
 
-  // Try native Date parsing as a fallback (handles most M/D/YYYY etc.)
   const d = new Date(s);
   if (!isNaN(d.getTime())) {
     return d.toISOString().slice(0, 10);
@@ -62,9 +132,11 @@ function normalizeDate(raw) {
   return null;
 }
 
-async function fetchRows() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_RANGE)}?key=${API_KEY}`;
-  const res = await fetch(url);
+async function fetchRows(accessToken) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(SHEET_RANGE)}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`Sheets API error ${res.status}: ${body}`);
@@ -96,12 +168,13 @@ function serializeEntries(entries) {
 }
 
 async function main() {
-  const rows = await fetchRows();
+  const accessToken = await getAccessToken();
+  const rows = await fetchRows(accessToken);
 
   const entries = [];
   for (const row of rows) {
     const reservedDate = normalizeDate(row[COLUMNS.reserved_date]);
-    if (!reservedDate) continue; // skip blank/unparseable rows entirely
+    if (!reservedDate) continue;
 
     entries.push({
       region: (row[COLUMNS.region] || '').trim(),
@@ -130,4 +203,3 @@ main().catch(err => {
   console.error(err);
   process.exit(1);
 });
-
