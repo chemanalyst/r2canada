@@ -32,4 +32,7 @@
  *                     yet available
  */
 
-window.TRACKER_ENTRIES = [];
+window.TRACKER_ENTRIES = [
+  { region: "Ontario", trim: "Standard", reserved_date: "2024-03-08", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
+  { region: "British Columbia", trim: "Performance", reserved_date: "2024-03-07", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null }
+];
