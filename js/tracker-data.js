@@ -34,5 +34,6 @@
 
 window.TRACKER_ENTRIES = [
   { region: "Ontario", trim: "Standard", reserved_date: "2024-03-08", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
-  { region: "British Columbia", trim: "Performance", reserved_date: "2024-03-07", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null }
+  { region: "British Columbia", trim: "Performance", reserved_date: "2024-03-07", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
+  { region: "Saskatchewan", trim: "Premium", reserved_date: "2025-06-17", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null }
 ];
