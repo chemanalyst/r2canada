@@ -41,5 +41,6 @@ window.TRACKER_ENTRIES = [
   { region: "Ontario", trim: "Premium", reserved_date: "2024-03-13", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
   { region: "Ontario", trim: "Premium", reserved_date: "2025-02-01", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
   { region: "Ontario", trim: "Performance", reserved_date: "2025-02-01", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
-  { region: "Quebec", trim: "Performance", reserved_date: "2024-07-23", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null }
+  { region: "Quebec", trim: "Performance", reserved_date: "2024-07-23", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null },
+  { region: "Alberta", trim: "Performance", reserved_date: "2024-07-23", order_status: "Reservation Only (No Configuration Yet)", delivered_date: null }
 ];
